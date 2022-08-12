@@ -32,6 +32,7 @@ public class Bullet : MonoBehaviour
             Destroy(other.gameObject);
         }
     }
+    
 
     void FlipBulletFacing()
     {
