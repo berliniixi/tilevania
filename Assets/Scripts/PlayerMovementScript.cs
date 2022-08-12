@@ -2,17 +2,19 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Cinemachine;
+using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
+
 
 public class PlayerMovementScript : MonoBehaviour
 {
     [SerializeField] float runSpeed = 10f;
     [SerializeField] float jumpSpeed = 5f;
     [SerializeField] float climbSpeed = 5f;
+
     bool isAlive = true;
-    
     
     Vector2 moveInput;
     Rigidbody2D _rigidbody2D;
@@ -25,11 +27,14 @@ public class PlayerMovementScript : MonoBehaviour
     [SerializeField] Transform gun;
     
     CoinsPickup _coinsPickup;
-
-
-     /*private Animator _fireAnimator;*/
+    
+    enum MovementState { idle  , isShooting , isRunning , isClimbing }
+    MovementState state;
+    
+    
     
     float gravityScaleAtStart;
+    
     
     void Start()
     {
@@ -49,6 +54,8 @@ public class PlayerMovementScript : MonoBehaviour
             return;
         }
         
+        _animator.SetInteger("state" , (int)state);
+
         Run();
         FlipSprite();
         ClimbLadder();
@@ -59,12 +66,13 @@ public class PlayerMovementScript : MonoBehaviour
     {
         if (!isAlive)
         {
+
             return;
         }
-        
-        Instantiate(Bullet , gun.position , transform.rotation);
+        state = MovementState.isShooting;
+        Instantiate(Bullet , gun.position , transform.localRotation);
     }
-
+    
     void OnMove(InputValue value)
     {
         if (!isAlive)
@@ -99,9 +107,15 @@ public class PlayerMovementScript : MonoBehaviour
     {
         Vector2 playerVelocity = new Vector2(moveInput.x * runSpeed, _rigidbody2D.velocity.y);
         _rigidbody2D.velocity = playerVelocity;
+        
+        if (moveInput.x != 0 && state != MovementState.isClimbing)
+        {
+            state = MovementState.isRunning;
+        }else if (moveInput.x == 0)
+        {
+            state = MovementState.idle;
+        }
 
-        bool playerHasHorizontalSpeed = Mathf.Abs(_rigidbody2D.velocity.x) > Mathf.Epsilon;
-        _animator.SetBool( "isRunning", playerHasHorizontalSpeed);
     }
 
     void FlipSprite()
@@ -119,8 +133,7 @@ public class PlayerMovementScript : MonoBehaviour
         if (!_myFeetCollider2D.IsTouchingLayers(LayerMask.GetMask("Climbing Layer")))
         {
             _rigidbody2D.gravityScale = gravityScaleAtStart;
-            _animator.SetBool( "isClimbing", false);
-
+            /*state = MovementState.idle;*/
             return;
         }
         
@@ -128,8 +141,7 @@ public class PlayerMovementScript : MonoBehaviour
         _rigidbody2D.velocity = climbVelocity;
         _rigidbody2D.gravityScale = 0;
         
-        bool playerHasVerticalSpeed = Mathf.Abs(_rigidbody2D.velocity.y) > Mathf.Epsilon;
-        _animator.SetBool( "isClimbing", playerHasVerticalSpeed);
+        state = MovementState.isClimbing;
     }
 
     void PlayerDeath()
