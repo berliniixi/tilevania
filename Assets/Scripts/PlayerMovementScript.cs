@@ -93,6 +93,7 @@ public class PlayerMovementScript : MonoBehaviour
         
         if (!_myFeetCollider2D.IsTouchingLayers(LayerMask.GetMask("Ground")))
         {
+            state = MovementState.idle;
             return; 
         }
         
